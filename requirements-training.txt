@@ -1,0 +1,7 @@
+rectools[lightfm]>=0.14
+lightning-fabric>=2.4
+lightgbm>=4.0
+pandas>=2.0
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.3

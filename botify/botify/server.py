@@ -32,6 +32,7 @@ recommendations_lfm_redis = Redis(app, config_prefix="REDIS_RECOMMENDATIONS_LFM"
 recommendations_contextual_redis = Redis(app, config_prefix="REDIS_RECOMMENDATIONS_SASREC")
 
 recommendations_hstu_redis = Redis(app, config_prefix="REDIS_RECOMMENDATIONS_HSTU")
+recommendations_learned_redis = Redis(app, config_prefix="REDIS_RECOMMENDATIONS_LEARNED")
 
 data_logger = DataLogger(app)
 atexit.register(data_logger.close)
@@ -67,11 +68,24 @@ catalog.upload_recommendations(
     "RECOMMENDATIONS_HSTU_FILE_PATH"
 )
 
+catalog.upload_recommendations(
+    recommendations_learned_redis.connection,
+    "RECOMMENDATIONS_LEARNED_FILE_PATH",
+    key_object="item_id",
+    key_recommendations="recommendations",
+)
+
 
 sasrec_i2i_recommender = I2IRecommender(
     listen_history_redis.connection,
     recommendations_contextual_redis.connection,
     random_recommender,
+)
+
+learned_i2i_recommender = I2IRecommender(
+    listen_history_redis.connection,
+    recommendations_learned_redis.connection,
+    sasrec_i2i_recommender,
 )
 
 parser = reqparse.RequestParser()
@@ -112,14 +126,12 @@ class NextTrack(Resource):
         args = parser.parse_args()
         persist_user_listen_history(user, args.track, args.time)
 
-        treatment = Experiments.HSTU.assign(user)
+        treatment = Experiments.LEARNED_I2I_QR.assign(user)
 
         if treatment == Treatment.C:
             recommender = sasrec_i2i_recommender
-        elif treatment == Treatment.T1:
-            recommender = Indexed(recommendations_hstu_redis.connection, catalog, random_recommender)
         else:
-            recommender = random_recommender
+            recommender = learned_i2i_recommender
 
         recommendation = recommender.recommend_next(user, args.track, args.time)
 

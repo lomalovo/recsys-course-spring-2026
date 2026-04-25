@@ -66,6 +66,7 @@ class Experiments:
     AA = Experiment("AA", Split.HALF_HALF)
     I2I = Experiment("I2I", Split.THREE_WAY)
     HSTU = Experiment("HSTU", Split.HALF_HALF)
+    LEARNED_I2I_QR = Experiment("LEARNED_I2I_QR", Split.HALF_HALF)
 
     def __init__(self):
-        self.experiments = [Experiments.HSTU]
+        self.experiments = [Experiments.LEARNED_I2I_QR]
